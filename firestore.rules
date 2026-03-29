@@ -2,27 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    // Collection: users
-    // Document ID: userId (from Auth UID)
-    // Fields:
-    //   - uid: string (required)
-    //   - email: string (required, email format)
-    //   - displayName: string (optional)
-    //   - photoURL: string (optional)
-    //
-    // Collection: games
-    // Document ID: auto-generated
-    // Fields:
-    //   - name: string (required, 1-100 chars)
-    //   - link: string (required, valid URL)
-    //   - category: string (required, 'game' or 'private_server')
-    //   - userId: string (required, must match Auth UID)
-    //   - createdAt: timestamp (required)
-    // ===============================================================
-
-    // ===============================================================
     // Helper Functions
     // ===============================================================
     function isAuthenticated() {
@@ -52,43 +31,34 @@ service cloud.firestore {
     }
 
     // ===============================================================
-    // Domain Validators
-    // ===============================================================
-    function isValidUser(data) {
-      return data.keys().hasAll(['uid', 'email']) &&
-             data.uid == request.auth.uid &&
-             isValidEmail(data.email) &&
-             (data.get('displayName', '') is string) &&
-             (data.get('photoURL', '') is string) &&
-             (data.get('lastLogin', request.time) is timestamp);
-    }
-
-    function isValidGameEntry(data) {
-      return data.keys().hasAll(['name', 'link', 'category', 'userId', 'createdAt']) &&
-             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
-             isValidUrl(data.link) &&
-             data.category in ['game', 'private_server'] &&
-             data.userId == request.auth.uid &&
-             data.createdAt is timestamp;
-    }
-
-    // ===============================================================
     // Rules
     // ===============================================================
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId) && isValidUser(request.resource.data);
-      allow update: if isOwner(userId) && isValidUser(request.resource.data) && 
-                    request.resource.data.uid == resource.data.uid;
+      // Allow reading own profile, or searching by email
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
     }
 
     match /games/{gameId} {
       allow read: if isDocOwner() || isAdmin();
-      allow create: if isAuthenticated() && isValidGameEntry(request.resource.data);
-      allow update: if isDocOwner() && isValidGameEntry(request.resource.data) &&
-                    request.resource.data.userId == resource.data.userId &&
-                    request.resource.data.createdAt == resource.data.createdAt;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isDocOwner() && request.resource.data.userId == resource.data.userId;
       allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /friendRequests/{requestId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.fromUid || request.auth.token.email == resource.data.toEmail);
+      allow create: if isAuthenticated() && request.resource.data.fromUid == request.auth.uid;
+      allow update: if isAuthenticated() && (request.auth.token.email == resource.data.toEmail || request.auth.uid == resource.data.fromUid);
+      allow delete: if isAuthenticated() && (request.auth.token.email == resource.data.toEmail || request.auth.uid == resource.data.fromUid);
+    }
+
+    match /appStore/{appId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.authorUid == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.authorUid == request.auth.uid;
+      allow delete: if isAuthenticated() && (resource.data.authorUid == request.auth.uid || isAdmin());
     }
   }
 }

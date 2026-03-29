@@ -69,9 +69,33 @@ export interface GameEntry {
   createdAt: Timestamp;
 }
 
+export interface FriendRequest {
+  id?: string;
+  fromUid: string;
+  fromEmail: string;
+  fromName: string;
+  toEmail: string;
+  status: 'pending' | 'accepted' | 'declined';
+  createdAt: Timestamp;
+}
+
+export interface AppStoreEntry {
+  id?: string;
+  name: string;
+  description: string;
+  downloadLink: string;
+  iconUrl?: string;
+  authorUid: string;
+  authorName: string;
+  createdAt: Timestamp;
+}
+
 export interface UserProfile {
   uid: string;
   email: string;
   displayName: string;
   photoURL: string;
+  theme?: 'zinc' | 'orange' | 'blue' | 'purple';
+  gamingUsername?: string;
+  friends?: string[];
 }

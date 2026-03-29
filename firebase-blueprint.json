@@ -8,9 +8,41 @@
         "uid": { "type": "string", "description": "The unique user ID from Firebase Auth." },
         "email": { "type": "string", "format": "email", "description": "User's email address." },
         "displayName": { "type": "string", "description": "User's display name." },
-        "photoURL": { "type": "string", "description": "URL to user's profile picture." }
+        "photoURL": { "type": "string", "description": "URL to user's profile picture." },
+        "theme": { "type": "string", "enum": ["zinc", "orange", "blue", "purple"], "description": "User's preferred site theme." },
+        "gamingUsername": { "type": "string", "description": "User's gaming handle." },
+        "friends": { "type": "array", "items": { "type": "string" }, "description": "List of friend UIDs." }
       },
       "required": ["uid", "email"]
+    },
+    "FriendRequest": {
+      "title": "Friend Request",
+      "description": "A request to connect with another user.",
+      "type": "object",
+      "properties": {
+        "fromUid": { "type": "string" },
+        "fromEmail": { "type": "string" },
+        "fromName": { "type": "string" },
+        "toEmail": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "declined"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fromUid", "fromEmail", "toEmail", "status", "createdAt"]
+    },
+    "AppStoreEntry": {
+      "title": "App Store Entry",
+      "description": "A game or app published to the community store.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "downloadLink": { "type": "string", "format": "uri" },
+        "iconUrl": { "type": "string", "format": "uri" },
+        "authorUid": { "type": "string" },
+        "authorName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "description", "downloadLink", "authorUid", "createdAt"]
     },
     "GameEntry": {
       "title": "Game Entry",
@@ -34,6 +66,14 @@
     "/games/{gameId}": {
       "schema": "GameEntry",
       "description": "Storage for saved games and private server links."
+    },
+    "/friendRequests/{requestId}": {
+      "schema": "FriendRequest",
+      "description": "Pending friend requests."
+    },
+    "/appStore/{appId}": {
+      "schema": "AppStoreEntry",
+      "description": "Publicly shared games and apps."
     }
   }
 }
